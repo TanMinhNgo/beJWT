@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -14,20 +15,20 @@
 <body>
     <div class="user-info-container">
         <div class="container">
-            <form class="row">
+            <form class="row" method="post" action="/user/create-user">
                 <div class="mb-3 mt-3 col-6">
                     <label for="email" class="form-label">Email address</label>
-                    <input type="email" class="form-control" id="email" aria-describedby="emailHelp">
+                    <input type="email" class="form-control" id="email" aria-describedby="emailHelp" name="email" required>
                 </div>
                 <div class="col-6"></div>
                 <div class="mb-3 col-6">
                     <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password">
+                    <input type="password" class="form-control" id="password" name="password" required>
                 </div>
                 <div class="col-6"></div>
                 <div class="mb-3 col-6">
                     <label for="username" class="form-label">Username</label>
-                    <input type="text" class="form-control" id="username">
+                    <input type="text" class="form-control" id="username" name="username" required>
                 </div>
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary">Submit</button>
