@@ -1,36 +1,50 @@
-import mysql from 'mysql2';
-
-const connection = mysql.createConnection({
-    host: 'localhost',
-    port: 3306,
-    user: 'root',
-    password: '123456',
-    database: 'jwt'
-})
+import userService from '../service/userService';
 
 const homeController = {
     getHomePage: (req, res) => {
         const name = "Minh Tan";
         return res.render('home.ejs', { name });
     },
+    
+    getUserPage: async (req, res) => {
+        const userList = await userService.getUserList();
+        
+        return res.render('user.ejs', { userList });
+    },
+    
+    getUpdateUserPage: async (req, res) => {
+        const { userId } = req.params;
 
-    getUserPage: (req, res) => {
-        return res.render('user.ejs');
+        const user = await userService.getUserById(userId, res);
+        let userData;
+        if (user && user.length > 0) {
+            userData = user[0];
+        }
+        return res.render('user-update.ejs', { user: userData });
     },
 
-    createNewUser: (req, res) => {
+    getCreateNewUser: async (req, res) => {
         const { email, password, username } = req.body;
 
-        connection.query('INSERT INTO users (email, password, username) VALUES (?, ?, ?)', [email, password, username], (error, results) => {
-            if (error) {
-                console.error('Error inserting user:', error);
-                return res.status(500).send('Error creating user');
-            }
+        await userService.createNewUser(email, password, username, res);
 
-            return res.redirect('/user');
-        });
+        return res.redirect('/user');
+    },
+
+    getDeleteUser: async (req, res) => {
+        const { userId } = req.params;
+
+        await userService.deleteUser(userId, res);
+
+        return res.redirect('/user');
+    },
+
+    getUpdateUser: async (req, res) => {
+        const { email, username, userId } = req.body;
+
+        await userService.updateUser(userId, email, username, res);
+        return res.redirect('/user');
     }
-
-}
+};
 
 module.exports = homeController;
