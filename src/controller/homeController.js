@@ -3,6 +3,7 @@ import userService from '../service/userService';
 const homeController = {
     getHomePage: (req, res) => {
         const name = "Minh Tan";
+
         return res.render('home.ejs', { name });
     },
     
@@ -16,11 +17,8 @@ const homeController = {
         const { userId } = req.params;
 
         const user = await userService.getUserById(userId, res);
-        let userData;
-        if (user && user.length > 0) {
-            userData = user[0];
-        }
-        return res.render('user-update.ejs', { user: userData });
+
+        return res.render('user-update.ejs', { user: user });
     },
 
     getCreateNewUser: async (req, res) => {
@@ -43,6 +41,7 @@ const homeController = {
         const { email, username, userId } = req.body;
 
         await userService.updateUser(userId, email, username, res);
+
         return res.redirect('/user');
     }
 };

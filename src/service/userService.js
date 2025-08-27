@@ -1,10 +1,7 @@
-import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
-import Bluebird from 'bluebird';
+import db from '../models/index.js';
 
 const salt = bcrypt.genSaltSync(10);
-
-
 
 const hashedPassword = (userPassword) => {
     const hashedPassword = bcrypt.hashSync(userPassword, salt);
@@ -13,17 +10,15 @@ const hashedPassword = (userPassword) => {
 
 const createNewUser = async (email, password, username, res) => {
     const hashPassword = hashedPassword(password);
-    const connection = await mysql.createConnection({
-        host: 'localhost',
-        port: 3306,
-        user: 'root',
-        password: '123456',
-        database: 'jwt',
-        Promise: Bluebird
-    });
 
     try {
-        await connection.execute('INSERT INTO users (email, password, username) VALUES (?, ?, ?)', [email, hashPassword, username]);
+        await db.User.create({
+            email: email,
+            password: hashPassword,
+            username: username,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        });
     } catch (error) {
         console.error('Error inserting user:', error);
         return res.status(500).send('Error creating user');
@@ -32,17 +27,16 @@ const createNewUser = async (email, password, username, res) => {
 
 
 const getUserList = async () => {
-    const connection = await mysql.createConnection({
-        host: 'localhost',
-        port: 3306,
-        user: 'root',
-        password: '123456',
-        database: 'jwt',
-        Promise: Bluebird
-    });
-
     try {
-        const [users] = await connection.execute('SELECT * FROM users');
+        const users = await db.User.findAll({
+            include: [
+                {
+                    model: db.Group
+                }
+            ],
+            raw: true,
+            nest: true
+        });
         return users;
     } catch (error) {
         console.error('Error fetching user list:', error);
@@ -51,17 +45,10 @@ const getUserList = async () => {
 };
 
 const deleteUser = async (userId, res) => {
-    const connection = await mysql.createConnection({
-        host: 'localhost',
-        port: 3306,
-        user: 'root',
-        password: '123456',
-        database: 'jwt',
-        Promise: Bluebird
-    });
-
     try {
-        await connection.execute('DELETE FROM users WHERE id = ?', [userId]);
+        await db.User.destroy({
+            where: { id: userId }
+        });
     } catch (error) {
         console.error('Error deleting user:', error);
         return res.status(500).send('Error deleting user');
@@ -69,17 +56,10 @@ const deleteUser = async (userId, res) => {
 };
 
 const getUserById = async (userId, res) => {
-    const connection = await mysql.createConnection({
-        host: 'localhost',
-        port: 3306,
-        user: 'root',
-        password: '123456',
-        database: 'jwt',
-        Promise: Bluebird
-    });
-
     try {
-        const [user] = await connection.execute('SELECT * FROM users WHERE id = ?', [userId]);
+        const user = await db.User.findOne({
+            where: { id: userId }
+        });
         return user;
     } catch (error) {
         console.error('Error fetching user by ID:', error);
@@ -88,17 +68,11 @@ const getUserById = async (userId, res) => {
 };
 
 const updateUser = async (userId, email, username, res) => {
-    const connection = await mysql.createConnection({
-        host: 'localhost',
-        port: 3306,
-        user: 'root',
-        password: '123456',
-        database: 'jwt',
-        Promise: Bluebird
-    });
-
     try {
-        await connection.execute('UPDATE users SET email = ?, username = ? WHERE id = ?', [email, username, userId]);
+        await db.User.update(
+            { email: email, username: username, updatedAt: new Date() },
+            { where: { id: userId } }
+        );
     } catch (error) {
         console.error('Error updating user:', error);
         return res.status(500).send('Error updating user');
