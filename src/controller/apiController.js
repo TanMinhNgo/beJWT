@@ -15,13 +15,38 @@ const apiController = {
                     message: "All fields are required"
                 });
             }
-            await loginRegisterService.createNewUser(email, password, username, gender, phone, address, res);
 
-            return res.status(201).json({
-                message: "User registered successfully"
+            const response = await loginRegisterService.createNewUser(email, password, username, gender, phone, address);
+
+            return res.status(response.status).json({
+                message: response.message
             });
         } catch (err) {
             console.error("Error occurred during registration:", err);
+            return res.status(500).json({
+                message: "Internal server error"
+            });
+        }
+    },
+
+    handleLogin: async (req, res) => {
+        try {
+            const emailOrPhone = req.body.email || req.body.phone;
+            const password = req.body.password;
+            if (!emailOrPhone || !password) {
+                return res.status(400).json({
+                    message: "Email/Phone and password are required"
+                });
+            }
+            
+            const response = await loginRegisterService.handleUserLogin(emailOrPhone, password);
+
+            return res.status(response.status).json({
+                message: response.message,
+                data: response.data
+            });
+        } catch (err) {
+            console.error("Error occurred during login:", err);
             return res.status(500).json({
                 message: "Internal server error"
             });
