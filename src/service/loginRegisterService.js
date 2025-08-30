@@ -69,14 +69,12 @@ const handleUserLogin = async (emailOrPhone, password) => {
             const isValidPassword = checkPassword(password, user.password);
             if (isValidPassword) {
                 const data = {
-                    user: {
-                        email: user.email,
-                        username: user.username,
-                        phone: user.phone,
-                        address: user.address,
-                        gender: user.sex,
-                        groupId: user.groupId
-                    },
+                    user: await db.User.findByPk(user.id, {
+                        attributes: ['id', 'email', 'username', 'phone', 'address', 'sex', 'createdAt', 'updatedAt'], include: {
+                            model: db.Group,
+                            attributes: ['id', 'name', 'description']
+                        }
+                    }),
                     // accessToken: generateAccessToken(user)
                 }
                 return { status: 200, message: 'Login successful', data: data };
