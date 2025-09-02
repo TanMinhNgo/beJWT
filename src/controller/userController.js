@@ -43,27 +43,52 @@ const userController = {
     },
 
     createFunc: async (req, res) => {
-        const { email, password, username } = req.body;
+        try {
+            const { email, password, username, phone, address, gender, groupId } = req.body;
 
-        await userService.createNewUser(email, password, username, res);
+            const response = await userApiService.createNewUser(email, password, username, gender, address, phone, groupId);
 
-        return res.redirect('/user');
+            return res.status(response.status).json({
+                message: response.message
+            });
+
+        } catch (error) {
+            console.error('Error during deleting user:', error);
+            return res.status(500).send('Internal server error');
+        }
     },
 
     deleteFunc: async (req, res) => {
-        const { userId } = req.params;
+        try {
+            const { id } = req.params;
 
-        await userService.deleteUser(userId, res);
+            const response = await userApiService.deleteUser(id);
 
-        return res.redirect('/user');
+            return res.status(response.status).json({
+                message: response.message
+            });
+
+        } catch (error) {
+            console.error('Error during deleting user:', error);
+            return res.status(500).send('Internal server error');
+        }
     },
 
     updateFunc: async (req, res) => {
-        const { email, username, userId } = req.body;
+        try {
+            const { id } = req.params;
+            const { email, username, phone, address, gender, groupId } = req.body;
 
-        await userService.updateUser(userId, email, username, res);
+            const response = await userApiService.updateUser(id, email, username, gender, address, phone, groupId);
 
-        return res.redirect('/user');
+            return res.status(response.status).json({
+                message: response.message
+            });
+
+        } catch (error) {
+            console.error('Error during updating user:', error);
+            return res.status(500).send('Internal server error');
+        }
     }
 };
 

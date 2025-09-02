@@ -1,4 +1,13 @@
-import db from "../models/index.js";
+import bcrypt from 'bcryptjs';
+import db from '../models/index.js';
+import { Op } from 'sequelize';
+
+const salt = bcrypt.genSaltSync(10);
+
+const hashedPassword = (userPassword) => {
+    const hashedPassword = bcrypt.hashSync(userPassword, salt);
+    return hashedPassword;
+}
 
 const getAllUsers = async () => {
     try {
@@ -6,7 +15,8 @@ const getAllUsers = async () => {
             attributes: ['id', 'email', 'username', 'phone', 'address', 'sex', 'createdAt', 'updatedAt'], include: {
                 model: db.Group,
                 attributes: ['id', 'name', 'description']
-            }
+            },
+            order: [['id', 'DESC']]
         });
         if (!users) {
             return { status: 404, message: "No users found", data: [] };
@@ -28,7 +38,7 @@ const getAllUsers = async () => {
             }
         }));
 
-        return {status: 200, message: "Get all users successfully", data: data};
+        return { status: 200, message: "Get all users successfully", data: data };
     } catch (error) {
         console.error('Error during getting all users:', error);
         return { status: 500, message: 'Internal server error', data: null };
@@ -72,12 +82,13 @@ const getUserById = async (userId) => {
 
 const getUsersByPagination = async (page, limit) => {
     try {
-        const {count, rows} = await db.User.findAndCountAll({
+        const { count, rows } = await db.User.findAndCountAll({
             attributes: ['id', 'email', 'username', 'phone', 'address', 'sex', 'createdAt', 'updatedAt'],
             include: {
                 model: db.Group,
                 attributes: ['id', 'name', 'description']
             },
+            order: [['id', 'DESC']],
             limit: limit,
             offset: (page - 1) * limit
         });
@@ -96,9 +107,9 @@ const getUsersByPagination = async (page, limit) => {
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
             group: {
-                id: user.Group.id,
-                name: user.Group.name,
-                description: user.Group.description
+                id: user.Group.id || null,
+                name: user.Group.name || "Not found",
+                description: user.Group.description || "Not found"
             },
         }));
 
@@ -119,15 +130,34 @@ const getUsersByPagination = async (page, limit) => {
     }
 };
 
-const createNewUser = async (email, password, username, gender, address, phone) => {
+const createNewUser = async (email, password, username, gender, address, phone, groupId) => {
     try {
+        // Check if email or phone already exists
+        const checkEmail = await db.User.findOne({ where: { email: email } });
+        if (checkEmail && checkEmail.email === email) {
+            return { status: 400, message: 'Email already exists' };
+        }
+        const checkPhone = await db.User.findOne({ where: { phone: phone } });
+        if (checkPhone && checkPhone.phone === phone) {
+            return { status: 400, message: 'Phone number already exists' };
+        }
+        const checkPassword = password.length < 6;
+        if (checkPassword) {
+            return { status: 400, message: 'Password must be at least 6 characters' };
+        }
+        const checkUser = await db.User.findOne({ where: { username: username } });
+        if (checkUser) {
+            return { status: 400, message: 'User already exists' };
+        }
+
         const newUser = await db.User.create({
             email: email,
-            password: password,
+            password: hashedPassword(password),
             username: username,
             sex: gender,
             address: address,
             phone: phone,
+            groupId: groupId, // Default group ID
             createdAt: new Date(),
             updatedAt: new Date()
         });
@@ -139,14 +169,27 @@ const createNewUser = async (email, password, username, gender, address, phone) 
         return { status: 201, message: "User created successfully" };
     } catch (error) {
         console.error('Error during creating new user:', error);
-        return { status: 500, message: 'Internal server error'};
+        return { status: 500, message: 'Internal server error' };
     }
 };
 
-const updateUser = async (id, email, username, gender, address, phone) => {
+const updateUser = async (id, email, username, gender, address, phone, groupId) => {
     try {
+        const checkEmail = await db.User.findOne({ where: { email: email, id: { [Op.ne]: id } } });
+        if (checkEmail && checkEmail.email === email) {
+            return { status: 400, message: 'Email already exists' };
+        }
+        const checkPhone = await db.User.findOne({ where: { phone: phone, id: { [Op.ne]: id } } });
+        if (checkPhone && checkPhone.phone === phone) {
+            return { status: 400, message: 'Phone number already exists' };
+        }
+        const checkUser = await db.User.findOne({ where: { username: username, id: { [Op.ne]: id } } });
+        if (checkUser) {
+            return { status: 400, message: 'User already exists' };
+        }
+
         const [updated] = await db.User.update(
-            { email: email, username: username, sex: gender, address: address, phone: phone, updatedAt: new Date() },
+            { email: email, username: username, sex: gender, address: address, phone: phone, groupId: groupId, updatedAt: new Date() },
             { where: { id } }
         );
         if (!updated) {
