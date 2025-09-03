@@ -41,6 +41,13 @@ const apiController = {
             
             const response = await loginRegisterService.handleUserLogin(emailOrPhone, password);
 
+            if (response.data?.accessToken) {
+                res.cookie("jwt", response.data.accessToken, {
+                    httpOnly: true,
+                    maxAge: 60 * 60 * 1000 // 1 hour
+                });
+            }
+
             return res.status(response.status).json({
                 message: response.message,
                 data: response.data

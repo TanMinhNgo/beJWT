@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs';
 import db from '../models/index.js';
 import { Op } from 'sequelize';
+import JWTService from './JWTService.js';
+import { createJWT } from '../middleware/JWTAction.js';
 
 const salt = bcrypt.genSaltSync(10);
 
@@ -43,7 +45,7 @@ const createNewUser = async (email, password, username, gender, phone, address) 
             sex: gender,
             phone: phone,
             address: address,
-            groupId: 1, // Default group ID
+            groupId: 5, // Default group ID
             createdAt: new Date(),
             updatedAt: new Date()
         });
@@ -67,16 +69,31 @@ const handleUserLogin = async (emailOrPhone, password) => {
 
         if (user) {
             const isValidPassword = checkPassword(password, user.password);
+            const roles = await JWTService.getGroupWithRoles(user);
+            const response = await db.User.findByPk(user.id, {
+                attributes: ['id', 'email', 'username', 'phone', 'address', 'sex', 'createdAt', 'updatedAt'], include: {
+                    model: db.Group,
+                    attributes: ['id', 'name', 'description']
+                }
+            });
+
             if (isValidPassword) {
                 const data = {
-                    user: await db.User.findByPk(user.id, {
-                        attributes: ['id', 'email', 'username', 'phone', 'address', 'sex', 'createdAt', 'updatedAt'], include: {
-                            model: db.Group,
-                            attributes: ['id', 'name', 'description']
-                        }
-                    }),
-                    // accessToken: generateAccessToken(user)
-                }
+                    user: {
+                        id: response.id,
+                        email: response.email,
+                        username: response.username,
+                        phone: response.phone,
+                        address: response.address,
+                        sex: response.sex,
+                        groupWithRoles: roles,
+                    },
+                    accessToken: createJWT({
+                        email: user.email,
+                        groupWithRoles: roles
+                    })
+                };
+
                 return { status: 200, message: 'Login successful', data: data };
             }
         }
