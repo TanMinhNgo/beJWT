@@ -28,10 +28,19 @@ const verifyJWT = (token) => {
     return decoded;
 };
 
+const extractToken = (req) => {
+    if (req.headers.authorization && req.headers.authorization.split(" ")[0] === "Bearer") {
+        return req.headers.authorization.split(" ")[1];
+    }
+    return null;
+}
+
 const checkUserJWT = (req, res, next) => {
-    let cookies = req.cookies;
-    if (cookies?.jwt) {
-        let token = cookies.jwt;
+    let cookies = req.cookies
+    let tokenFromHeader = extractToken(req);
+
+    if (cookies?.jwt || tokenFromHeader) {
+        let token = cookies.jwt || tokenFromHeader;
         let decoded = verifyJWT(token);
         if (decoded) {
             req.user = decoded;
