@@ -1,6 +1,7 @@
 import express from 'express';
 import apiController from '../controller/apiController';
 import userController from '../controller/userController';
+import roleController from '../controller/roleController';
 import groupController from '../controller/groupController';
 import { checkUserJWT, checkUserPermission } from '../middleware/JWTAction';
 
@@ -24,6 +25,15 @@ const initApiRoutes = (app) => {
     router.put('/user/update/:id', checkUserJWT, checkUserPermission, userController.updateFunc);
     router.delete('/user/delete/:id', checkUserJWT, checkUserPermission, userController.deleteFunc);
     router.get('/user/:id', checkUserJWT, checkUserPermission, userController.getUserbyId);
+
+    // role api
+    router.get('/role/read', roleController.readRoleFunc);
+    router.post('/role/create', roleController.createRoleFunc);
+    router.put('/role/update/:id', roleController.updateRoleFunc);
+    router.delete('/role/delete/:id', roleController.deleteRoleFunc);
+    router.get('/role/:id', roleController.getRolebyId);
+    router.get('/role/by-group/:id', roleController.getRoleByGroup);
+    router.post('/role/assign-to-group', roleController.assignRoleToGroup);
 
     // group api
     router.get('/group/read', groupController.readFunc);
